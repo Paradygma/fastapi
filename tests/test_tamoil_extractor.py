@@ -198,3 +198,21 @@ class TestTamoilIntegration:
         expected_total = 182.50
         actual_total = sum(t.importo_totale for t in result.invoice_data.transactions)
         assert abs(actual_total - expected_total) < 0.01
+
+
+@pytest.mark.tamoil
+@pytest.mark.unit
+class TestTamoilNumeroFattura:
+    """Il numero fattura sta nella riga dei valori, sotto le etichette"""
+
+    def test_numero_fattura_riga_sotto_etichette(self):
+        import re
+        text = (
+            "Fattura N° Data fattura Cod. Cliente Agente Codice Fiscale / Partita IVA\n"
+            "DA25191152 15/10/2025 0000270740 053 07119341001 30 giorni data fattura 1\n"
+        )
+        extractor = TamoilExtractor()
+        extractor.get_pdf_text = lambda pdf: text
+        header = extractor.extract_invoice_header(None)
+
+        assert header["numero_fattura"] == "DA25191152"

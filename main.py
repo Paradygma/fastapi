@@ -44,6 +44,13 @@ class ExtractionResult(BaseModel):
     fornitore: Optional[str] = None
     message: Optional[str] = None
 
+# Colonne del CSV per Autoroute (le nuove sono in coda per non spostare le esistenti)
+CSV_FIELDNAMES = [
+    "Targa", "Data_Rifornimento", "Ora_Rifornimento", "Chilometraggio",
+    "Litri", "Importo_Totale", "Fornitore", "Tipo_Rifornimento",
+    "Numero_Scontrino", "Localita", "Numero_Fattura", "Note", "Autista"
+]
+
 class BatchResult(BaseModel):
     status: str
     processed_files: int
@@ -197,13 +204,7 @@ async def extract_and_download_csv(files: List[UploadFile] = File(...)):
 
     # Genera CSV
     output = io.StringIO()
-    fieldnames = [
-        "Targa", "Data_Rifornimento", "Ora_Rifornimento", "Chilometraggio",
-        "Litri", "Importo_Totale", "Fornitore", "Tipo_Rifornimento",
-        "Numero_Scontrino", "Localita"
-    ]
-
-    writer = csv.DictWriter(output, fieldnames=fieldnames, delimiter=";")
+    writer = csv.DictWriter(output, fieldnames=CSV_FIELDNAMES, delimiter=";")
     writer.writeheader()
     writer.writerows(all_records)
 
@@ -266,13 +267,7 @@ async def download_csv_file(files: List[UploadFile] = File(...)):
 
     # Genera CSV
     output = io.StringIO()
-    fieldnames = [
-        "Targa", "Data_Rifornimento", "Ora_Rifornimento", "Chilometraggio",
-        "Litri", "Importo_Totale", "Fornitore", "Tipo_Rifornimento",
-        "Numero_Scontrino", "Localita"
-    ]
-
-    writer = csv.DictWriter(output, fieldnames=fieldnames, delimiter=";")
+    writer = csv.DictWriter(output, fieldnames=CSV_FIELDNAMES, delimiter=";")
     writer.writeheader()
     writer.writerows(all_records)
 

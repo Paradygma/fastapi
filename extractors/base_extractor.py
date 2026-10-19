@@ -129,6 +129,8 @@ class BaseExtractor(ABC):
     def normalizza_numero(stringa: str) -> float:
         """
         Converte una stringa numerica in formato europeo (1.234,56) in float.
+        Se non c'e' la virgola, il punto e' considerato separatore decimale
+        (1234.56 -> 1234.56), non separatore delle migliaia.
 
         Args:
             stringa: Stringa da convertire
@@ -141,12 +143,11 @@ class BaseExtractor(ABC):
                 return 0.0
             # Rimuovi spazi
             stringa = stringa.strip()
-            # Rimuovi punti (separatori migliaia)
-            stringa = stringa.replace('.', '')
-            # Sostituisci virgola con punto (separatore decimale)
-            stringa = stringa.replace(',', '.')
+            if ',' in stringa:
+                # Formato europeo: punto = migliaia, virgola = decimali
+                stringa = stringa.replace('.', '').replace(',', '.')
             return float(stringa)
-        except:
+        except (ValueError, AttributeError, TypeError):
             return 0.0
 
     @staticmethod

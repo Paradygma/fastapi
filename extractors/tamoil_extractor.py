@@ -2,11 +2,14 @@
 Estrattore per fatture Tamoil Italia S.p.A.
 Gestisce il formato specifico delle fatture Tamoil mycard.
 """
+import logging
 import re
 from typing import List, Dict, Any
 from collections import defaultdict
 from .base_extractor import BaseExtractor
 from models.invoice_models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 class TamoilExtractor(BaseExtractor):
@@ -35,7 +38,9 @@ class TamoilExtractor(BaseExtractor):
         }
 
         # Estrai numero fattura (formato: DA25191152)
-        match_nr = re.search(r"Fattura N[°\s]*\s*(\w+)", text, re.IGNORECASE)
+        # Il numero sta nella riga dei valori sotto le etichette:
+        # "Fattura N° Data fattura Cod. Cliente ..." / "DA25191152 15/10/2025 ..."
+        match_nr = re.search(r"Fattura N°[\s\S]*?\b([A-Z]{2}\d{6,})\b", text)
         if match_nr:
             header["numero_fattura"] = match_nr.group(1)
 
@@ -118,7 +123,8 @@ class TamoilExtractor(BaseExtractor):
                     try:
                         trans_dict = self._parse_transaction(match_txn, line)
                         transazioni_in_attesa.append(trans_dict)
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("Riga transazione scartata: %s (%s)", line, e)
                         continue
 
         # Gestisci transazioni rimaste (senza targa)

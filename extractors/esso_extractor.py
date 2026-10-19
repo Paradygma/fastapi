@@ -1,11 +1,14 @@
 """
 Estrattore per fatture WEX (ex Esso) — WEX Europe Services SRL.
 """
+import logging
 import re
 from typing import List, Dict, Any
 from collections import defaultdict
 from .base_extractor import BaseExtractor
 from models.invoice_models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 class EssoExtractor(BaseExtractor):
@@ -92,7 +95,8 @@ class EssoExtractor(BaseExtractor):
                         if key not in visti:
                             visti.add(key)
                             transactions.append(Transaction(**trans_dict))
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("Riga transazione scartata: %s (%s)", line, e)
                         continue
 
         return transactions

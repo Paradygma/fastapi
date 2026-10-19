@@ -38,24 +38,23 @@ class ExtractorFactory:
         Raises:
             ValueError: Se non viene trovato un estrattore compatibile
         """
+        # Estrai il testo dal PDF (errori di lettura restano distinguibili)
         try:
-            # Estrai il testo dal PDF
             pdf_text = cls._extract_text_from_pdf(pdf_content)
-
-            # Prova ogni estrattore
-            for extractor_class in cls.EXTRACTORS:
-                extractor = extractor_class()
-                if extractor.can_handle(pdf_text):
-                    return extractor
-
-            # Nessun estrattore trovato
-            raise ValueError(
-                "Tipo di fattura non riconosciuto. "
-                "Formati supportati: IP Plus, Esso, Q8, Tamoil"
-            )
-
         except Exception as e:
-            raise ValueError(f"Errore nell'identificazione del tipo di fattura: {str(e)}")
+            raise ValueError(f"PDF non leggibile: {str(e)}") from e
+
+        # Prova ogni estrattore
+        for extractor_class in cls.EXTRACTORS:
+            extractor = extractor_class()
+            if extractor.can_handle(pdf_text):
+                return extractor
+
+        # Nessun estrattore trovato
+        raise ValueError(
+            "Tipo di fattura non riconosciuto. "
+            "Formati supportati: IP Plus, Esso, Q8, Tamoil"
+        )
 
     @staticmethod
     def _extract_text_from_pdf(pdf_content: bytes) -> str:
@@ -125,7 +124,11 @@ class ExtractorFactory:
                 "Fornitore": transaction.fornitore,
                 "Tipo_Rifornimento": transaction.prodotto,
                 "Numero_Scontrino": transaction.numero_scontrino,
-                "Localita": transaction.localita
+                "Localita": transaction.localita,
+                "Numero_Fattura": extraction_result.invoice_data.numero_fattura,
+                # Note e Autista vengono compilati a mano: colonne sempre vuote
+                "Note": "",
+                "Autista": ""
             }
             data.append(record)
 

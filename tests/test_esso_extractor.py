@@ -163,3 +163,30 @@ class TestEssoIntegration:
         assert len(unleaded) == 1
         assert unleaded[0].targa == "FK444ZJ"
         assert unleaded[0].quantita == 68.88
+
+
+@pytest.mark.esso
+@pytest.mark.integration
+class TestWexColonneAutoroute:
+    """Colonne Numero_Fattura, Note (matricola carta) e Autista nel CSV"""
+
+    PDF_WEX = "Fatture nuove/fattura wex 15-4.pdf"
+
+    @pytest.fixture
+    def records(self):
+        from pathlib import Path
+        from extractors.extractor_factory import ExtractorFactory
+
+        pdf_path = Path(__file__).parent.parent / self.PDF_WEX
+        if not pdf_path.exists():
+            pytest.skip(f"PDF non trovato: {pdf_path}")
+        result = ExtractorFactory.extract_from_pdf(pdf_path.read_bytes(), pdf_path.name)
+        return result["data"]
+
+    def test_numero_fattura_su_ogni_riga(self, records):
+        assert all(r["Numero_Fattura"] == "00154751" for r in records)
+
+    def test_note_e_autista_vuoti(self, records):
+        """Note e Autista vengono compilati a mano: sempre vuoti, anche se il PDF riporta 'Carta: NNN'"""
+        assert all(r["Note"] == "" for r in records)
+        assert all(r["Autista"] == "" for r in records)

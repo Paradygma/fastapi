@@ -2,11 +2,14 @@
 Estrattore per fatture Q8 (Kuwait Petroleum Italia - CartissimaQ8).
 Gestisce il formato specifico delle fatture CartissimaQ8.
 """
+import logging
 import re
 from typing import List, Dict, Any
 from collections import defaultdict
 from .base_extractor import BaseExtractor
 from models.invoice_models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 class Q8Extractor(BaseExtractor):
@@ -94,6 +97,7 @@ class Q8Extractor(BaseExtractor):
                         trans_dict = self._parse_transaction(match_txn, line)
                         transazioni_in_attesa.append(trans_dict)
                     except Exception as e:
+                        logger.debug("Riga transazione scartata: %s (%s)", line, e)
                         continue
 
                 # Poi cerca targa (appare dopo le transazioni)
@@ -171,9 +175,16 @@ class Q8Extractor(BaseExtractor):
         quantita = self.normalizza_numero(quantita_raw)
         prezzo_unitario = self.normalizza_numero(prezzo_raw)
 
-        # Estrai codice sede (4 cifre dopo GLS 0000 000001)
-        match_sede = re.search(r"[A-Z]{3}\s+\d{4}\s+\d+\s+(\d+)", line)
-        codice_sede = match_sede.group(1) if match_sede else "0000"
+        # Dopo il codice prodotto: Cod Veic. (4 cifre), KM, Cod PV
+        # Esempio: GLS 0000 589392 5484
+        match_colonne = re.search(
+            r"[A-Z]{3}\s+\d{4}\s+(?P<km>\d+)\s+(?P<sede>\d+)",
+            line
+        )
+        codice_sede = match_colonne.group("sede") if match_colonne else "0000"
+
+        # KM riportato così com'è (anche valori anomali come 1), solo zeri iniziali rimossi
+        km = int(match_colonne.group("km")) if match_colonne else 0
 
         # Estrai località (tra il codice sede e SF/SV/PP)
         # Cerco pattern: [codice_sede] [LOCALITÀ] [SF|SV|PP]
@@ -191,9 +202,6 @@ class Q8Extractor(BaseExtractor):
             "HBZ": "BENZINA PREMIUM"
         }
         prodotto = prodotto_map.get(codice_prodotto, "GASOLIO")
-
-        # Km non sempre disponibile nelle fatture Q8
-        km = 0
 
         return {
             "data": data,

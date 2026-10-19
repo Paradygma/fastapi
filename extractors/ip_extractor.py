@@ -2,11 +2,14 @@
 Estrattore per fatture IP Plus.
 Basato sulla logica esistente del main.py originale.
 """
+import logging
 import re
 from typing import List, Dict, Any
 from collections import defaultdict
 from .base_extractor import BaseExtractor
 from models.invoice_models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 class IPExtractor(BaseExtractor):
@@ -110,7 +113,8 @@ class IPExtractor(BaseExtractor):
                     try:
                         trans_dict = self._parse_transaction(match_txn, line)
                         transazioni_in_attesa.append(trans_dict)
-                    except Exception:
+                    except Exception as e:
+                        logger.debug("Riga transazione scartata: %s (%s)", line, e)
                         continue
 
         # Gestisci transazioni rimaste (senza targa)
@@ -156,7 +160,7 @@ class IPExtractor(BaseExtractor):
             if km > 10_000_000:
                 return 0
             return km
-        except Exception:
+        except (ValueError, AttributeError, TypeError):
             return 0
 
     def _determina_tipo_gasolio(self, line: str) -> str:

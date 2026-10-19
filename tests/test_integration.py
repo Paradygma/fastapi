@@ -209,7 +209,10 @@ class TestCSVExport:
             "Fornitore",
             "Tipo_Rifornimento",
             "Numero_Scontrino",
-            "Localita"
+            "Localita",
+            "Numero_Fattura",
+            "Note",
+            "Autista"
         ]
 
         for record in result["data"]:
@@ -224,11 +227,14 @@ class TestErrorHandling:
     """Test per gestione errori"""
 
     def test_invalid_pdf_format(self):
-        """Verifica gestione PDF non riconosciuto"""
-        # Crea un PDF fittizio con testo non riconosciuto
+        """
+        Verifica gestione file non leggibile come PDF.
+        Il messaggio distingue questo caso da 'Tipo di fattura non riconosciuto',
+        che riguarda un PDF valido di un fornitore non supportato.
+        """
         fake_pdf_text = b"Questo non e' un PDF di fattura valido"
 
-        with pytest.raises(ValueError, match="Errore nell'identificazione"):
+        with pytest.raises(ValueError, match="PDF non leggibile"):
             ExtractorFactory.get_extractor(fake_pdf_text)
 
     def test_empty_pdf(self):
